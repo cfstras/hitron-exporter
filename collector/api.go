@@ -184,8 +184,8 @@ func (r *HitronRouter) Login() (*Session, error) {
 	//}
 
 	form := url.Values{
-		"usr": {r.Username},
-		"pwd": {r.Password},
+		"user": {r.Username},
+		"pws": {r.Password},
 		//"forcelogoff": {"1"},
 		"preSession": {r.getCookie("preSession")},
 	}
@@ -201,7 +201,7 @@ func (r *HitronRouter) Login() (*Session, error) {
 	response := string(data)
 	log.Debugf("Login response: %+v %+v Body: %s", err, resp, response)
 	log.Debug("cookies: ", r.client.Jar.Cookies(r.parsedUrl))
-	if response != "success" {
+	if !strings.Contains(response,"success") {
 		return nil, r.handleLoginError(session, response)
 	}
 
