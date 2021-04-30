@@ -24,8 +24,10 @@ var (
 		prefix+"scrape_time", "Time the scrape run took", []string{"component"}, nil)
 
 	// SysInfo
-	systemUptimeDesc = prom.NewDesc(
-		prefix+"info_uptime", "System uptime", nil, nil)
+	systemLanUptimeDesc = prom.NewDesc(
+		prefix+"info_lan_uptime", "System uptime", nil, nil)
+	systemWanUptimeDesc = prom.NewDesc(
+		prefix+"info_wan_uptime", "System uptime", nil, nil)
 	versionDesc = prom.NewDesc(
 		prefix+"version", "Versions in labels",
 		[]string{"hw_version", "sw_version", "serial"}, nil)
@@ -73,7 +75,8 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	ch <- scrapeTimeDesc
 
 	// SysInfo
-	ch <- systemUptimeDesc
+	ch <- systemLanUptimeDesc
+	ch <- systemWanUptimeDesc
 	ch <- versionDesc
 	ch <- addressDesc
 	ch <- trafficDesc
@@ -135,7 +138,8 @@ func (c *Collector) CollectInfo(wg *sync.WaitGroup, session *Session, ch chan<- 
 		log.Info("Info: ", err)
 		return
 	}
-	ch <- prom.MustNewConstMetric(systemUptimeDesc, prom.CounterValue, parseDuration(info.SystemUptime))
+	ch <- prom.MustNewConstMetric(systemLanUptimeDesc, prom.CounterValue, parseDuration(info.SystemLANUptime))
+	ch <- prom.MustNewConstMetric(systemWanUptimeDesc, prom.CounterValue, parseDuration(info.SystemWANUptime))
 	ch <- prom.MustNewConstMetric(versionDesc, prom.GaugeValue, 1, info.HwVersion, info.SwVersion, info.SerialNumber)
 	ch <- prom.MustNewConstMetric(addressDesc, prom.GaugeValue, 1, info.WanIp, info.LanIp, info.RfMac)
 	ch <- prom.MustNewConstMetric(trafficDesc, prom.CounterValue, parsePkt(info.LRecPkt), "lan", "recv")
@@ -193,7 +197,7 @@ func (c *Collector) CollectCMDocisWAN(wg *sync.WaitGroup, session *Session, ch c
 		is(NetworkAccessPermitted, wan.NetworkAccess),
 		wan.CmIpAddress, wan.CmNetMask, wan.CmGateway)
 	ch <- prom.MustNewConstMetric(cmIpLeaseDurationDesc, prom.CounterValue,
-		parseDuration(wan.CmIpLeaseDuration))
+		parseLeaseDuration(wan.CmIpLeaseDuration))
 }
 
 func (c *Collector) CollectConnectInfo(wg *sync.WaitGroup, session *Session, ch chan<- prom.Metric) {
@@ -248,9 +252,23 @@ func is(expected, actual string) float64 {
 
 // parseDuration parses a duration in the format of "05 Days,21 Hours,33 Minutes,44 Seconds"
 // Example
+func parseLeaseDuration(raw string) float64 {
+	var days, hours, minutes, seconds time.Duration
+	_, err := fmt.Sscanf(raw, "D: %2d H: %2d M: %2d S:%2d", &days, &hours, &minutes, &seconds)
+	if err != nil {
+		log.Warn("Unknown uptime format: ", err, " ", raw)
+		return -1
+	}
+
+	return float64(seconds +
+		minutes*60 +
+		hours*3600 +
+		days*24*3600)
+}
+
 func parseDuration(raw string) float64 {
 	var days, hours, minutes, seconds time.Duration
-	_, err := fmt.Sscanf(raw, "%2d Days,%2d Hours,%2d Minutes,%2d Seconds", &days, &hours, &minutes, &seconds)
+	_, err := fmt.Sscanf(raw, "%3d days %2dh:%2dm:%2ds", &days, &hours, &minutes, &seconds)
 	if err != nil {
 		log.Warn("Unknown uptime format: ", err, " ", raw)
 		return -1

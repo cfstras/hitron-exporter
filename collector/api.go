@@ -37,7 +37,8 @@ type SysInfo struct {
 	AftrAddr        string `json:"aftrAddr"`        //
 	DelegatedPrefix string `json:"delegatedPrefix"` //
 	LanIPv6Addr     string `json:"lanIPv6Addr"`     //
-	SystemUptime    string `json:"systemUptime"`    // 04 Days,22 Hours,23 Minutes,48 Seconds
+	SystemLANUptime string `json:"systemLanUptime"`    // 04 Days,22 Hours,23 Minutes,48 Seconds
+	SystemWANUptime string `json:"systemWanUptime"`    // 04 Days,22 Hours,23 Minutes,48 Seconds
 	SystemTime      string `json:"systemTime"`      // Sat Apr 03, 2021, 14:16:41
 	Timezone        string `json:"timezone"`        // 1
 	WRecPkt         string `json:"WRecPkt"`         // 815.00M Bytes
