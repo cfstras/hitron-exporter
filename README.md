@@ -1,5 +1,7 @@
 # hitron-exporter
 
+Added Inital support for Hitron CGN3
+
 Metrics exporter for Hitron CGNV4-FX2 routers, which are (used to be?) distributed as part of Unitymedia/Vodafone Business cable internet.
 
 
